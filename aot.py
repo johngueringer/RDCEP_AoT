@@ -6,6 +6,9 @@ import matplotlib as mtplt
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import matplotlib.cm as cmaps
+from matplotlib import animation as anim
+import scipy.stats as stats
+import time
 
 """
 ---------------FETCHING DATA---------------
@@ -134,7 +137,6 @@ def pull_all(node, strt, stp):
     
     for url in urls:
         try:
-            print "Getting data from: " + url
             request = ulib2.Request(url)
             handle = ulib2.urlopen(request)
             lines = handle.readlines()
@@ -154,171 +156,11 @@ def pull_all(node, strt, stp):
         
     return aot_node
 
-def pullTempSensor(node, strt, stp):
-    urls = makeURLs(node, strt, stp)
-    sensorname = 'MLX90614ESF-DAA.Melexis.008-2013'
-    sensor = []
-    temp = 0.0
-    units = 'F'
-    
-    for url in urls:
-        try:
-            request = ulib2.Request(url)
-            handle = ulib2.urlopen(request)
-            lines = handle.readlines()
 
-            for line in lines:
-                contents = line.split(",")
-                if sensorname == contents[0]:
-
-                    dtdata = contents[1].split()
-                    date = dtdata[0].split('/')
-                    mm = int(date[0])
-                    dd = int(date[1])
-                    yyyy = int(date[2]) + 2000
-                    time = dtdata[1].split(':')
-                    h = int(time[0])
-                    m = int(time[1])
-                    s = int(time[2])
-
-                    datetime = dt.datetime(yyyy, mm, dd, h, m, s)
-
-                    for content in contents[2:]:
-                        data = content.split(";")
-                        temp = (float)(data[1])
-
-                    instance = {"timestamp": datetime,
-                             "sensorname": contents[0],
-                             "temperature": temp,
-                             "units": units,
-                             }
-                    sensor.append(instance)
-        except:
-            print "Missing data from: " + url
-            
-    return sensor
-
-
-"""
-Fetches AoT data from specified url, and extracts IR Temperature Grid
-Stores each sensor measurement in Python Dictionary
-Returns a list of sensor measurements
-"""
-def pullTempGridSensor(node, strt, stp):
-    urls = makeURLs(node, strt, stp)
-    sensorname = 'D6T-44L-06.Omron.2012'
-    sensor = []
-    
-    for url in urls:
-        try:
-            request = ulib2.Request(url)
-            handle = ulib2.urlopen(request)
-            lines = handle.readlines()
-
-            for line in lines:
-                contents = line.split(",")
-                if sensorname == contents[0]:
-                    temps = []
-                    units = []
-                    pixels = []
-
-                    dtdata = contents[1].split()
-                    date = dtdata[0].split('/')
-                    mm = int(date[0])
-                    dd = int(date[1])
-                    yyyy = int(date[2]) + 2000
-                    time = dtdata[1].split(':')
-                    h = int(time[0])
-                    m = int(time[1])
-                    s = int(time[2])
-
-                    datetime = dt.datetime(yyyy, mm, dd, h, m, s)
-
-                    for content in contents[2:]:
-                        data = content.split(";")
-                        temps.append((float)(data[1]))
-                        units.append(data[2])
-                        pixels.append(data[3])
-
-                    instance = {"timestamp": datetime,
-                             "sensorname": contents[0],
-                             "temperature": temps,
-                             "unit": units,
-                             "pixels": pixels,
-                             }
-                    sensor.append(instance)
-        except:
-            print "Missing data from: " + url 
-            
-    return sensor
-
-def pullHumSensor(node, strt, stp):
-    urls = makeURLs(node, strt, stp)
-    sensorname = 'HIH6130.Honeywell.2011'
-    sensor = []
-    temp = 0.0
-    hum = 0.0
-    tunits = 'C'
-    hunits = '%RH'
-    
-    for url in urls:
-        try:
-            request = ulib2.Request(url)
-            handle = ulib2.urlopen(request)
-            lines = handle.readlines()
-
-            for line in lines:
-                contents = line.split(",")
-                if sensorname == contents[0]:
-
-                    dtdata = contents[1].split()
-                    date = dtdata[0].split('/')
-                    mm = int(date[0])
-                    dd = int(date[1]) + 2000
-                    yyyy = int(date[2])
-                    time = dtdata[1].split(':')
-                    h = int(time[0])
-                    m = int(time[1])
-                    s = int(time[2])
-
-                    datetime = dt.datetime(yyyy, mm, dd, h, m, s)
-
-                    tdata = contents[2].split(";")
-                    temp = (float)(tdata[1])
-                    
-                    hdata = contents[3].split(";")
-                    hum = (float) (hdata[1])
-
-                    instance = {"timestamp": datetime,
-                             "sensorname": contents[0],
-                             "temperature": temp,
-                             "humidity": hum,
-                             "tempunits": tunits,
-                             "humunits": hunits
-                             }
-                    sensor.append(instance)
-        except:
-            print "Missing data from: " + url
-            
-    return sensor
 
 """
 ---------------EXTRACTING DATA---------------
 """
-
-def tempData(sensor):
-    times = []
-    temps = []
-    
-    for instance in sensor:
-        time = mdates.date2num(instance['timestamp'])
-        temp = instance['Temperature']
-        
-        times.append(time)
-        temps.append(temp)
-    
-    return times, temps
-
 def tempGridData(sensor):
     times = []
     pixels = []
@@ -339,17 +181,64 @@ def tempGridData(sensor):
                 
     return times, pixels
 
-def humidityData(sensor):
+def extractData(sensor):
+    std_keys = ['timestamp', 'sensorname', 'units', 'context']
+    gridsensor = 'D6T-44L-06.Omron.2012'
+    merged = 'merged'
+    
+    sample = sensor[0]
+    senstype = sample['sensorname']
+    context = sample['context']
+    units = sample['units']
+    keys = sample.keys()
+    
+    data_keys = []
     times = []
-    hums = []
-    for instance in sensor:
-        time = mdates.date2num(instance['timestamp'])
-        hum = instance['Humidity']
+    set1 = []
+    
+    for key in keys:
+        if key not in std_keys:
+            data_keys.append(key)
+
+    if senstype == gridsensor and context != merged:
+        times, set1 = tempGridData(sensor)
         
-        times.append(time)
-        hums.append(hum)
+        return {'time': times,
+               'data': [set1],
+               'data_keys': data_keys,
+               'units': units}
+    
+    if len(data_keys) == 2:
+        set2 = []
+        for instance in sensor:
+            key1 = data_keys[0]
+            key2 = data_keys[1]
+            datum1 = instance[key1]
+            datum2 = instance[key2]
+            time = instance['timestamp']
+            
+            set1.append(datum1)
+            set2.append(datum2)
+            times.append(time)
         
-    return times, hums
+        return {'time': times,
+               'data': [set1, set2],
+               'data_keys': data_keys,
+               'units': units}
+    else:
+        for instance in sensor:
+            key = data_keys[0]
+            datum = instance[key]
+            time = instance['timestamp']
+            
+            set1.append(datum)
+            times.append(time)
+        
+        return {'time': times,
+               'data': [set1],
+               'data_keys': data_keys,
+               'units': units}
+
 
 """
 ---------------MANIPULATING DATA---------------
@@ -459,20 +348,25 @@ def mean_hrly_tempGrid(sensor):
     return times, pixs
 
 def mergeGrid(sensor):
-    for instance in sensor:
+    new_sensor = []
+    for i in range(len(sensor)):
+        instance = sensor[i]
         unit = instance['units'][0]
         grid = instance['Temperature']
         avg = mean(grid)
         
         instance['Temperature'] = avg
-        instance['units'] = unit
+        instance['units'] = [unit]
         instance['context'] = 'merged'
+        
+        new_sensor.append(instance)
+        
+    return new_sensor
         
 
 """
 ---------------GRAPHING DATA---------------
 """
-
 def tempGrid_timeseries(times, pixs):
     sub_plots = []
     l = 4
@@ -492,14 +386,6 @@ def tempGrid_timeseries(times, pixs):
         plt.grid(True)
         i+=1
 
-    plt.show()
-
-def temp_timeseries(times, temps):
-    plt.plot_date(times, temps, fmt='r-')
-    plt.gcf().autofmt_xdate()
-    plt.xlabel('Time')
-    plt.ylabel('Temperature (F)')
-    plt.grid(True)
     plt.show()
 
 def tempGrid_heatmap(pixs):
@@ -535,10 +421,84 @@ def temp_heatmap(times, temps):
     plt.grid(True)
     plt.show()
 
-def humidity_timeseries(times, hums):
-    plt.plot_date(times, hums, fmt='r-')
-    plt.gcf().autofmt_xdate()
-    plt.xlabel('Time')
-    plt.ylabel('Humidity (%RH)')
-    plt.grid(True)
-    plt.show()
+def plot_timeseries(sensor):
+    gridsensor = 'D6T-44L-06.Omron.2012'
+    merged = 'merged'
+    
+    sensor_data = extractData(sensor)
+    times = sensor_data['time']
+    data = sensor_data['data']
+    dkeys = sensor_data['data_keys']
+    units = sensor_data['units']
+    set1 = data[0]
+    
+    if len(data) == 2:
+        set2 = data[1]
+        
+        title = sensor[0]['sensorname'] + ': ' + sensor[0]['timestamp'].strftime('%m-%d-%Y')
+        y1lab = dkeys[0] + ' (' + units[1] + ')'
+        y2lab = dkeys[1] + ' (' + units[0] + ')'
+               
+        fig = plt.figure() 
+        ax1 = plt.subplot()
+        ax1.plot(times, set1, 'r-', label=y1lab)
+        handles, labels = ax1.get_legend_handles_labels()
+        ax1.legend(handles, labels, loc='upper left', bbox_to_anchor=(0.95, 1))
+        #ax1.gcf().autofmt_xdate()
+        ax1.set_xlabel('Time (hr)')
+        ax1.set_ylabel(y1lab)
+        ax1.set_title(title)
+        
+        ax2 = ax1.twinx()
+        ax2.plot(times, set2, 'b-', label=y2lab)
+        handles, labels = ax2.get_legend_handles_labels()
+        ax2.legend(handles, labels, loc='upper left', bbox_to_anchor=(0.95, 0.95))
+        ax2.set_ylabel(y2lab)
+        plt.show()
+        
+    elif sensor[0]['sensorname'] == gridsensor and sensor[0]['context'] != merged:
+        tempGrid_timeseries(times, set1)
+        
+    else:
+        title = sensor[0]['sensorname'] + ': ' + sensor[0]['timestamp'].strftime('%m-%d-%Y')
+        ylab = dkeys[0] + ' (' + units[0] + ')'
+        fig = plt.figure() 
+        ax1 = plt.subplot()
+        ax1.plot(times, set1, 'r-', label=ylab)
+        handles, labels = ax1.get_legend_handles_labels()
+        ax1.legend(handles, labels, loc='upper left', bbox_to_anchor=(0.95, 1))
+        #ax1.gcf().autofmt_xdate()
+        ax1.set_xlabel('Time (hr)')
+        ax1.set_ylabel(ylab)
+        ax1.set_title(title)
+        plt.show()
+        
+def plot_correlation(sensor):
+    sensor_data = extractData(sensor)
+    times = sensor_data['time']
+    data = sensor_data['data']
+    dkeys = sensor_data['data_keys']
+    units = sensor_data['units']
+    
+    if len(data) == 2:
+        set1 = data[0]
+        set2 = data[1]
+        
+        corr = stats.pearsonr(set1, set2)[0]
+        
+        title = sensor[0]['sensorname'] + ': ' + sensor[0]['timestamp'].strftime('%m-%d-%Y') + '\n' + dkeys[0] + ' v.s ' + dkeys[1] + '\n Correlation: ' + '%.3f' % corr
+        y1lab = dkeys[0] + ' (' + units[1] + ')'
+        y2lab = dkeys[1] + ' (' + units[0] + ')'
+               
+        fig = plt.figure() 
+        ax1 = plt.subplot()
+        ax1.plot(set2, set1, 'o', label=y1lab)
+        handles, labels = ax1.get_legend_handles_labels()
+        ax1.legend(handles, labels, loc='upper left', bbox_to_anchor=(0.95, 1))
+        #ax1.gcf().autofmt_xdate()
+        ax1.set_xlabel(y2lab)
+        ax1.set_ylabel(y1lab)
+        ax1.set_title(title)
+        plt.show()
+    else:
+        print "Sensor must have 2 sets of data"
