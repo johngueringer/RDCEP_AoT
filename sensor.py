@@ -49,7 +49,8 @@ class Sensor(object):
             self._data.append(val)
             self._dtype = dtypes
             self._context = context
-    
+
+
 class DualSensor(Sensor):
     def __init__(self, code):
         super(DualSensor, self).__init__(code)
@@ -57,9 +58,8 @@ class DualSensor(Sensor):
     
     @property
     def data2(self):
-        return data2
+        return self._data2
     
-    @property
     def add_point(self, line):
         arr = line.split(',')
         name = arr[0]

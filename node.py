@@ -4,15 +4,15 @@ import urllib2
 import datetime as dt
 from ConfigParser import ConfigParser
 from constants import SENSOR_CODES, GRID_SENSOR, DATA_URI
-from sensor import Sensor, GridSensor
+from sensor import Sensor, GridSensor, DualSensor
 
 
-config = ConfigParser('config.ini')
+# config = ConfigParser('config.ini')
 
 
 class Node(object):
     def __init__(self, node):
-        self.node = node
+        self._node = node
         self._sensors = {k: [] for k in SENSOR_CODES}
 
     @property
@@ -21,20 +21,17 @@ class Node(object):
 
     @property
     def node(self):
-        return node
-    
+        return self._node
+
     @property
     def sensors(self):
         return self._sensors
 
     def sensor(self, code):
-        return next([c for c in self.sensors if c.code == code], None)
+        return next((v for k, v in self.sensors.iteritems() if k == code), None)
 
     def pull_all(self, strt, stp):
         urls = self.makeURLs(strt, stp)
-        grid_sensor = GRID_SENSOR
-        
-        models = self._sensors.keys()
 
         for url in urls:
             try:
@@ -42,49 +39,31 @@ class Node(object):
                 handle = urllib2.urlopen(request)
                 lines = handle.readlines()
 
-                for line in lines[:15]:
+                sensors = {'MLX90614ESF-DAA': Sensor,
+                           'D6T-44L-06': GridSensor,
+                           'TMP421': Sensor,
+                           'BMP180': Sensor,
+                           'PDV_P8104': Sensor,
+                           'Thermistor_NTC_PR103J2': Sensor,
+                           'HIH6130': DualSensor,
+                           'SHT15': DualSensor,
+                           'DS18B20': Sensor,
+                           'RHT03': DualSensor,
+                           'SHT75': DualSensor,
+                           'HIH4030': Sensor,
+                           'GA1A1S201WP': Sensor,
+                           'MAX4466': Sensor,
+                           'HTU21D': DualSensor}
+
+                for k, v in sensors.iteritems():
+                    self._sensors[k] = v(k)
+
+                for line in lines:
                     code = line.split(',')[0].split('.')[0]
-                    sensor = {'MLX90614ESF-DAA': Sensor,
-                              'D6T-44L-06': GridSensor,
-                              'TMP421': Sensor,
-                              'BMP180': Sensor,
-                              'PDV_P8104': Sensor,
-                              'Thermistor_NTC_PR103J2': Sensor,
-                              'HIH6130': DualSensor, 
-                              'SHT15': DualSensor, 
-                              'DS18B20': Sensor, 
-                              'RHT03': DualSensor,
-                              'SHT75': DualSensor, 
-                              'HIH4030': Sensor, 
-                              'GA1A1S201WP': Sensor, 
-                              'MAX4466': Sensor, 
-                              'HTU21D': DualSensor}
-                    
-                    self._sensors[code] = sensor[code](code)
-                
-                for line in lines[15:]:
-                    code = line.split(',')[0].split('.')[0]
-                    getData = {'MLX90614ESF-DAA': add_point,
-                              'D6T-44L-06': add_point,
-                              'TMP421': add_point,
-                              'BMP180': add_point,
-                              'PDV_P8104': add_point,
-                              'Thermistor_NTC_PR103J2': add_point,
-                              'HIH6130': add_point, 
-                              'SHT15': add_point, 
-                              'DS18B20': add_point, 
-                              'RHT03': add_point,
-                              'SHT75': add_point, 
-                              'HIH4030': add_point, 
-                              'GA1A1S201WP': add_point, 
-                              'MAX4466': add_point, 
-                              'HTU21D': add_point}
-                    self._sensors[code].sensor[code](line)
+                    self.sensor(code).add_point(line)
                     
             except:
                 print "Missing data from: " + url
-
-        return aot_node
 
     def makeURLs(self, strt_dte, stp_dte):
         urls = []
