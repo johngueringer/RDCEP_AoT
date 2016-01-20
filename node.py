@@ -32,6 +32,7 @@ class Node(object):
 
     def pull_all(self, strt, stp):
         urls = self.makeURLs(strt, stp)
+<<<<<<< HEAD
         sensors = {'MLX90614ESF-DAA': Sensor,
                        'D6T-44L-06': GridSensor,
                        'TMP421': Sensor,
@@ -50,6 +51,8 @@ class Node(object):
         
         for k, v in sensors.iteritems():
             self._sensors[k] = v(k)
+=======
+>>>>>>> 82546cace278072b184575f29bf5fd747b98300e
 
         for url in urls:
             try:
@@ -57,15 +60,40 @@ class Node(object):
                 handle = urllib2.urlopen(request)
                 lines = handle.readlines()
 
+<<<<<<< HEAD
+=======
+                sensors = {'MLX90614ESF-DAA': Sensor,
+                           'D6T-44L-06': GridSensor,
+                           'TMP421': Sensor,
+                           'BMP180': Sensor,
+                           'PDV_P8104': Sensor,
+                           'Thermistor_NTC_PR103J2': Sensor,
+                           'HIH6130': DualSensor,
+                           'SHT15': DualSensor,
+                           'DS18B20': Sensor,
+                           'RHT03': DualSensor,
+                           'SHT75': DualSensor,
+                           'HIH4030': Sensor,
+                           'GA1A1S201WP': Sensor,
+                           'MAX4466': Sensor,
+                           'HTU21D': DualSensor}
+
+                for k, v in sensors.iteritems():
+                    self._sensors[k] = v(k)
+
+>>>>>>> 82546cace278072b184575f29bf5fd747b98300e
                 for line in lines:
                     code = line.split(',')[0].split('.')[0]
                     self.sensor(code).add_point(line)
                     
             except:
                 print "Missing data from: " + url
+<<<<<<< HEAD
                 
             grid_sensor = self.sensor('D6T-44L-06')
             grid_sensor.parse()
+=======
+>>>>>>> 82546cace278072b184575f29bf5fd747b98300e
 
     def makeURLs(self, strt_dte, stp_dte):
         urls = []

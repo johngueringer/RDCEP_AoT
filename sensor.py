@@ -61,6 +61,7 @@ class Sensor(object):
             self._data.append(val)
             self._dtype = dtypes
             self._context = context
+<<<<<<< HEAD
     
     def plot_timeseries(self):
         data = self._data
@@ -92,6 +93,8 @@ class Sensor(object):
         ax1.set_ylabel(ylab)
         ax1.set_title(title)
         plt.show()
+=======
+>>>>>>> 82546cace278072b184575f29bf5fd747b98300e
 
 
 class DualSensor(Sensor):
