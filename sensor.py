@@ -61,7 +61,6 @@ class Sensor(object):
             self._data.append(val)
             self._dtype = dtypes
             self._context = context
-<<<<<<< HEAD
     
     def plot_timeseries(self):
         data = self._data
@@ -93,8 +92,6 @@ class Sensor(object):
         ax1.set_ylabel(ylab)
         ax1.set_title(title)
         plt.show()
-=======
->>>>>>> 82546cace278072b184575f29bf5fd747b98300e
 
 
 class DualSensor(Sensor):
@@ -235,7 +232,7 @@ class GridSensor(Sensor):
             info = datum.split(';')
             type = info[0]
             unit = info[2]
-            val = (timestamp, float(info[1]))
+            val = float(info[1])
             context = info[3]
             
             dtype = (type, unit)
@@ -245,7 +242,7 @@ class GridSensor(Sensor):
             self._dtype = dtypes
             self._context = context
             
-        self._data.append(vals)
+        self._data.append((timestamp, vals))
           
     def parse(self):
         pixels = []
@@ -253,15 +250,15 @@ class GridSensor(Sensor):
             pix = []
             pixels.append(pix)
 
-        j = 1
+        j = 0
         for instance in self._data:
             time = instance[0]
 
             for pix in pixels:
                 if j > 16:
-                    j = 1
+                    j = 0
                 
-                val = instance[1]
+                val = instance[1][j]
                 point = (time, val)
                 pix.append(point)
                 j+=1
