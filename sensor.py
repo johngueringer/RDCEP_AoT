@@ -86,7 +86,7 @@ class Sensor(object):
     :return      : Subplot of timeseries
     :rtype       : matplotlib subplot
     """
-    def plot_timeseries(self, subplot = None):
+    def plot_timeseries(self, subplot=None):
         if subplot is None:
             data = self._data
             dtype = self._dtype
@@ -144,16 +144,7 @@ class Sensor(object):
             subplot.set_xlabel(xlab)
             subplot.set_ylabel(ylab)
             subplot.set_title(title)
-            
-    """
-    Creates a timeseries plot from the data in the Sensor
-    
-    :param subplot  : Empty subplot
-    :type  subplot  : matplotlib subplot
-    :return         : None
-    :rtype          : void
-    """ 
-        
+       
 """
 Dual Sensor subclass for AoT sensors that collect two types of data:
 ADDITIONAL VARIABLES
@@ -211,7 +202,7 @@ class DualSensor(Sensor):
     :return      : Subplot of timeseries
     :rtype       : matplotlib subplot
     """
-    def plot_timeseries(self, subplot = None):
+    def plot_timeseries(self, subplot=None):
         if subplot is None:
             data = self._data
             data2 = self._data2
@@ -297,15 +288,6 @@ class DualSensor(Sensor):
             handles, labels = ax2.get_legend_handles_labels()
             ax2.legend(handles, labels, loc='upper left', bbox_to_anchor=(0.95, 0.95))
             ax2.set_ylabel(y2lab)
-    
-    """
-    Creates a timeseries plot from the data in the DualSensor
-    
-    :param subplot  : Empty subplot
-    :type  None     : matplotlib subplot
-    :return         : None
-    :rtype          : void
-    """
     
     """
     Correlates the two sets of data in the DualSensor and plots the correlation.

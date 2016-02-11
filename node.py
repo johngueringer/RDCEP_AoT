@@ -16,7 +16,7 @@ import scipy.stats as stats
 # config = ConfigParser('config.ini')
 
 """
-Node class:
+Node class for encapsulating AoT sensor data:
 INSTANCE VARIABLES
     node     : String      : name of the AoT node
     sensors  : Dictionary  : Dictionary of Sensor objects
@@ -170,7 +170,7 @@ class Node(object):
         sensors = self._sensors.iteritems()
         for sub_plot in sub_plots:
             sensor = sensors.next()[1]
-            if sensor is GridSensor:
+            if isinstance(sensor, GridSensor):
                 pass
             else:
                 sensor.plot_timeseries(sub_plot)
