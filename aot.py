@@ -11,12 +11,13 @@ import matplotlib.dates as mdates
 import matplotlib.cm as cmaps
 import scipy.stats as stats
 
-"""
-AoT class for encapsulating a list of Node objects:
-INSTANCE VARIABLES
-    nodes   :   Array   : List of Nodes
-"""
+
 class AoT(object):
+    """AoT class for encapsulating a list of Node objects:
+
+    INSTANCE VARIABLES
+        nodes   :   Array   : List of Nodes
+    """
     def __init__(self):
         self._nodes = []
     
@@ -24,13 +25,12 @@ class AoT(object):
     def nodes(self):
         return self._nodes
     
-    """
-    Adds a Node object to the AoT object
-    
-    :param node : Node object to be added
-    :type  node : Node
-    :return     : None
-    :rtype      : void
-    """
     def add(self, node):
+        """Add a Node object to the AoT object.
+
+        :param node : Node object to be added
+        :type  node : Node
+        :return     : None
+        :rtype      : void
+        """
         self._nodes.append(node)

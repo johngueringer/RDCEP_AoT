@@ -15,13 +15,15 @@ import scipy.stats as stats
 
 # config = ConfigParser('config.ini')
 
-"""
-Node class for encapsulating AoT sensor data:
-INSTANCE VARIABLES
-    node     : String      : name of the AoT node
-    sensors  : Dictionary  : Dictionary of Sensor objects
-"""
+
 class Node(object):
+    """Node class for encapsulating AoT sensor data:
+
+    INSTANCE VARIABLES
+        node     : str     : name of the AoT node
+        sensors  : dict    : Dictionary of Sensor objects
+    """
+
     def __init__(self, node):
         self._node = node
         self._sensors = {k: [] for k in SENSOR_CODES}
@@ -41,22 +43,22 @@ class Node(object):
     def sensor(self, code):
         return next((v for k, v in self.sensors.iteritems() if k == code), None)
 
-    """
-    The following method pulls the AoT sensor data from the specified start time to 
-    the specified stop time, and stores the data in the Sensor objects of the sensors 
-    dictionary.
-    
-    :param strt : First date from which to start pulling data
-    :type  strt : String
-    
-    :param stp  : Last date from which data will be pulled
-    :type  stp  : String
-    
-    :return     : This method stores the data from wa8.gl in appropriate Sensor objects
-    :rtype      : void
-    
-    """
     def pull_all(self, strt, stp):
+        """Pull the AoT sensor data from the specified start time to
+        the specified stop time; store the data in the Sensor objects of
+        the sensors dictionary.
+
+        :param strt : First date from which to start pulling data
+        :type  strt : str
+
+        :param stp  : Last date from which data will be pulled
+        :type  stp  : str
+
+        :return     : This method stores the data from wa8.gl in appropriate
+                      Sensor objects
+        :rtype      : None
+
+        """
         urls = self.makeURLs(strt, stp)
         sensors = {'MLX90614ESF-DAA': Sensor,
                        'D6T-44L-06': GridSensor,
@@ -92,19 +94,18 @@ class Node(object):
         grid_sensor = self.sensor('D6T-44L-06')
         grid_sensor.sort_by_pixel()
 
-    """
-    Generates a list of URLs from which to pull AoT data
-    
-    :param strt_dte : First date from which URLs will be generated
-    :type  strt_dte : String
-    
-    :param stp_dte  : Last date from which URLs will be generated
-    :type  stp_dte  : String
-    
-    :return         : List of URLs from which to pull data
-    :rtype          : Array of Strings
-    """
     def makeURLs(self, strt_dte, stp_dte):
+        """Generate a list of URLs from which to pull AoT data.
+
+        :param strt_dte : First date from which URLs will be generated
+        :type  strt_dte : str
+
+        :param stp_dte  : Last date from which URLs will be generated
+        :type  stp_dte  : str
+
+        :return         : List of URLs from which to pull data
+        :rtype          : list
+        """
         urls = []
 
         strt_dte_data = strt_dte.split('-')
@@ -138,26 +139,19 @@ class Node(object):
 
         return urls
     
-    """
-    Converts fromatted string to datetime object
-    
-    :param s  : Formatted string
-    :type  s  : String
-    :return   : datetime object representing the date
-    :rtype    : datetime object
-    """
+
     def to_datetime(self, s):
+        """Convert formatted string to datetime object
+
+        :param s  : Formatted string
+        :type  s  : str
+        :return   : datetime object representing the date
+        :rtype    : dt.datetime
+        """
         return dt.datetime.strptime(s, '%m/%d/%y %H:%M:%S')
     
-    """
-    Plots data contained in all the sensors of the AoT node
-    
-    :param None : None
-    :type  None : void
-    :return     : None
-    :rtype      : void
-    """
     def plot_all(self):
+        """Plot data contained in all the sensors of the AoT node."""
         sub_plots = []
         l = 5
         w = 3
@@ -176,5 +170,3 @@ class Node(object):
                 sensor.plot_timeseries(sub_plot)
         
         plt.show()
-            
-            

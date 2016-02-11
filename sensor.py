@@ -11,16 +11,17 @@ import matplotlib.dates as mdates
 import matplotlib.cm as cmaps
 import scipy.stats as stats
 
-"""
-Sensor class for encapsulating data in AoT sensors:
-INSTANCE VARIABLES
-    code        :  String  : Model of the AoT sensor
-    data        :  Array   : list of data points (datetime, float) tuples
-    sensor_name :  String  : Full name of sensor
-    dtype       :  Array   : list of types of data (type of data, units) tuples
-    context     :  String  : Additional sensor info
-"""
+
 class Sensor(object):
+    """Sensor class for encapsulating data in AoT sensors.
+
+    INSTANCE VARIABLES
+        code        :  str   : Model of the AoT sensor
+        data        :  list  : list of data points (datetime, float) tuples
+        sensor_name :  str   : Full name of sensor
+        dtype       :  list  : list of types of data (type of data, units) tuples
+        context     :  str   : Additional sensor info
+    """
     def __init__(self, code):
         self._code = code
         self._data = []
@@ -48,15 +49,14 @@ class Sensor(object):
     def context(self):
         return self._context
 
-    """
-    Adds one data point to the Sensor from a formatted string
-    
-    :param line : Formatted line containing data to be added
-    :type  line : String
-    :return     : None
-    :rtype      : void
-    """
     def add_point(self, line):
+        """Add one data point to the Sensor from a formatted string.
+
+        :param line : Formatted line containing data to be added
+        :type  line : str
+        :return     : None
+        :rtype      : None
+        """
         arr = line.split(',')
         name = arr[0]
         timestamp = dt.datetime.strptime(arr[1], '%m/%d/%y %H:%M:%S')
@@ -78,15 +78,14 @@ class Sensor(object):
             self._dtype = dtypes
             self._context = context
     
-    """
-    Creates a timeseries plot from the data in the Sensor
-    
-    :param None  : None
-    :type  None  : void
-    :return      : Subplot of timeseries
-    :rtype       : matplotlib subplot
-    """
     def plot_timeseries(self, subplot=None):
+        """Create a timeseries plot from the data in the Sensor.
+
+        :param subplot : None
+        :type  subplot : plt.subplot
+        :return        : Subplot of timeseries
+        :rtype         : plt.subplot
+        """
         if subplot is None:
             data = self._data
             dtype = self._dtype
@@ -145,12 +144,14 @@ class Sensor(object):
             subplot.set_ylabel(ylab)
             subplot.set_title(title)
        
-"""
-Dual Sensor subclass for AoT sensors that collect two types of data:
-ADDITIONAL VARIABLES
-    data2       :  Array   : Second list of data points (datetime, float) tuples
-"""
+
 class DualSensor(Sensor):
+    """Dual Sensor subclass for AoT sensors that collect two types of data:
+
+    ADDITIONAL VARIABLES
+        data2       :  list   : Second list of data points (datetime, float) tuples
+    """
+
     def __init__(self, code):
         super(DualSensor, self).__init__(code)
         self._data2 = []
@@ -159,15 +160,14 @@ class DualSensor(Sensor):
     def data2(self):
         return self._data2
     
-    """
-    Adds one data point to the DualSensor from a formatted string
-    
-    :param line : Formatted line containing data to be added
-    :type  line : String
-    :return     : None
-    :rtype      : void
-    """
     def add_point(self, line):
+        """Add one data point to the DualSensor from a formatted string.
+
+        :param line : Formatted line containing data to be added
+        :type  line : str
+        :return     : None
+        :rtype      : None
+        """
         arr = line.split(',')
         name = arr[0]
         timestamp = dt.datetime.strptime(arr[1], '%m/%d/%y %H:%M:%S')
@@ -194,15 +194,14 @@ class DualSensor(Sensor):
                 self._data2.append(val)
             i+=1
     
-    """
-    Creates a timeseries plot from the data in the DualSensor
-    
-    :param None  : None
-    :type  None  : void
-    :return      : Subplot of timeseries
-    :rtype       : matplotlib subplot
-    """
     def plot_timeseries(self, subplot=None):
+        """Create a timeseries plot from the data in the DualSensor.
+
+        :param subplot : None
+        :type  subplot : plt.subplot
+        :return        : Subplot of timeseries
+        :rtype         : plt.subplot
+        """
         if subplot is None:
             data = self._data
             data2 = self._data2
@@ -289,15 +288,13 @@ class DualSensor(Sensor):
             ax2.legend(handles, labels, loc='upper left', bbox_to_anchor=(0.95, 0.95))
             ax2.set_ylabel(y2lab)
     
-    """
-    Correlates the two sets of data in the DualSensor and plots the correlation.
-    
-    :param None  : None
-    :type  None  : void
-    :return      : Subplot of correlation
-    :rtype       : matplotlib subplot
-    """
     def plot_correlation(self):
+        """Correlate the two sets of data in the DualSensor and plot
+        the correlation.
+
+        :return        : Subplot of timeseries
+        :rtype         : plt.subplot
+        """
         data = self._data
         data2 = self._data2
         dtype = self._dtype
@@ -337,23 +334,24 @@ class DualSensor(Sensor):
         
         return ax1
 
-"""
-Grid Sensor subclass for the AoT IR grid sensor. This class overrides methods from the Sensor class
-to properly work with grid data
-"""
+
 class GridSensor(Sensor):
+    """Grid Sensor subclass for the AoT IR grid sensor.
+
+    This class overrides methods from the Sensor class to properly work
+    with grid data.
+    """
     def __init__(self, code):
         super(GridSensor, self).__init__(code)
     
-    """
-    Adds one data point to the GridSensor from a formatted string
-    
-    :param line : Formatted line containing data to be added
-    :type  line : String
-    :return     : None
-    :rtype      : void
-    """
     def add_point(self, line):
+        """Add one data point to the GridSensor from a formatted string.
+
+        :param line : Formatted line containing data to be added
+        :type  line : str
+        :return     : None
+        :rtype      : None
+        """
         arr = line.split(',')
         name = arr[0]
         timestamp = dt.datetime.strptime(arr[1], '%m/%d/%y %H:%M:%S')
@@ -379,15 +377,12 @@ class GridSensor(Sensor):
             
         self._data.append((timestamp, vals))
           
-    """
-    Sorts the data in the GridSensor by pixel.
-    
-    :param None : None
-    :type  None : void
-    :return     : None
-    :rtype      : void
-    """
     def sort_by_pixel(self):
+        """Sort the data in the GridSensor by pixel.
+
+        :return     : None
+        :rtype      : None
+        """
         pixels = []
         for i in range(17):
             pix = []
@@ -408,16 +403,14 @@ class GridSensor(Sensor):
 
         self._data = pixels 
     
-    """
-    Creates a timeseries plot for each pixel in the grid
-    
-    :param None  : None
-    :type  None  : void
-    :return      : List of subplots for the pixels in the grid
-    :rtype       : Array
-    
-    """
-    def plot_timeseries(self):
+    def plot_timeseries(self, subplot=None):
+        """Creates a timeseries plot for each pixel in the grid
+
+        :param subplot : None
+        :type  subplot : plt.subplot
+        :return      : List of subplots for the pixels in the grid
+        :rtype       : list
+        """
         pixs = self._data
         sub_plots = []
         l = 4
