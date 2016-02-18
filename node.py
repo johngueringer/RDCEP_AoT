@@ -152,21 +152,31 @@ class Node(object):
     
     def plot_all(self):
         """Plot data contained in all the sensors of the AoT node."""
+        fig = plt.figure(figsize=(10, 20))
         sub_plots = []
-        l = 5
-        w = 3
+        l = 7
+        w = 5
         grid = (l, w)
-        for i in range(l):
+        for i in range(3):
             for j in range(w):
                 sub_plot = plt.subplot2grid(grid, (i, j), rowspan=1, colspan=1)
                 sub_plots.append(sub_plot)
+                
+        for i in range(3, l):
+            for j in range(w - 1):
+                sub_plot = plt.subplot2grid(grid, (1,j), rowspan=1, colspan=1)
+                sub_plots.append(sub_plot)
 
+        i = 0
         sensors = self._sensors.iteritems()
-        for sub_plot in sub_plots:
-            sensor = sensors.next()[1]
+        for sensor in sensors:
+            sensor = sensor[1]
             if isinstance(sensor, GridSensor):
-                pass
+                grid_plots = sub_plots[16:]
+                sensor.plot_heatmap(grid_plots)
             else:
-                sensor.plot_timeseries(sub_plot)
+                sensor.plot_timeseries(sub_plots[i])
+                i+=1
         
+        plt.subplots_adjust(wspace=0.5, hspace=1)
         plt.show()

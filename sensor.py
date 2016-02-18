@@ -274,7 +274,6 @@ class DualSensor(Sensor):
             title_tmpl = '{}: {} and {}\n{} - {}'
             title = title_tmpl.format(name, type1, type2, strt, stp)
 
-            fig = plt.figure()
             subplot.plot(x, y1, 'r-', label=y1lab)
             handles, labels = subplot.get_legend_handles_labels()
             subplot.legend(handles, labels, loc='upper left', bbox_to_anchor=(0.95, 1))
@@ -360,21 +359,22 @@ class GridSensor(Sensor):
         self._sensor_name = name
 
         data = arr[2:]
+        context = []
         i = 0
         for datum in data:
             info = datum.split(';')
             type0 = info[0]
             unit = info[2]
             val = float(info[1])
-            context = info[3]
+            context.append(info[3])
             
             dtype = (type0, unit)
             dtypes.append(dtype)
             vals.append(val)
         
             self._dtype = dtypes
-            self._context = context
             
+        self._context = context
         self._data.append((timestamp, vals))
           
     def sort_by_pixel(self):
@@ -403,33 +403,88 @@ class GridSensor(Sensor):
 
         self._data = pixels 
     
-    def plot_timeseries(self, subplot=None):
-        """Creates a timeseries plot for each pixel in the grid
+    def plot_timeseries(self, subplots=None):
+        """Create a timeseries plot for each pixel in the grid
 
         :param subplot : None
         :type  subplot : plt.subplot
         :return      : List of subplots for the pixels in the grid
         :rtype       : list
         """
-        pixs = self._data
-        sub_plots = []
-        l = 4
-        w = 4
-        grid = (l, w)
-        for i in range(4):
-            for j in range(4):
-                sub_plot = plt.subplot2grid(grid, (i, j), rowspan=1, colspan=1)
-                sub_plots.append(sub_plot)
+        if subplots == None:
+            pixs = self._data
+            sub_plots = []
+            l = 4
+            w = 4
+            grid = (l, w)
+            for i in range(l):
+                for j in range(w):
+                    sub_plot = plt.subplot2grid(grid, (i, j), rowspan=1, colspan=1)
+                    sub_plots.append(sub_plot)
 
-        i = 0
-        for sub_plot in sub_plots:
-            pix = pixs[i]
-            x, y = zip(*pix)
-            sub_plot.plot_date(x, y, fmt='r-')
-            plt.gcf().autofmt_xdate()
-            plt.xlabel('Time')
-            plt.ylabel('Temperature (C)')
-            plt.grid(True)
-            i+=1
+            i = 1
+            for sub_plot in sub_plots:
+                pix = pixs[i]
+                x, y = zip(*pix)
+                sub_plot.plot_date(x, y, fmt='r-')
+                sub_plot.set_xlabel('Time')
+                sub_plot.set_ylabel('Temperature (C)')
+                sub_plot.set_title(self._sensor_name + ": " + self._context[i])
+                i+=1
+            plt.subplots_adjust(wspace=0.2, hspace=1)
 
-        return sub_plots
+            return sub_plots
+        else:
+            i = 1
+            for sub_plot in sub_plots:
+                pix = pixs[i]
+                x, y = zip(*pix)
+                sub_plot.plot_date(x, y, fmt='r-')
+                sub_plot.set_xlabel('Time')
+                sub_plot.set_ylabel('Temperature (C)')
+                sub_plot.set_title(self._sensor_name + ": " + self._context[i])
+                i+=1
+            plt.subplots_adjust(wspace=0.2, hspace=1)
+    
+    def plot_heatmap(self, subplots=None):
+        """Create a heatmap for each pixel in the grid
+        :param subplot : None
+        :type  subplot : plt.subplot
+        :return      : List of subplots for the pixels in the grid
+        :rtype       : list
+        """
+        if subplots == None:
+            pixs = self._data
+            sub_plots = []
+            l = 4
+            w = 4
+            grid = (l, w)
+            for i in range(l):
+                for j in range(w):
+                    sub_plot = plt.subplot2grid(grid, (i, j), rowspan=1, colspan=1)
+                    sub_plots.append(sub_plot)
+
+            i = 0
+            for pix in pixs[0:]:
+                sub_plot = sub_plots[i]
+                y = zip(*pix)[1]
+                sub_plot.pcolor(np.array([y]), cmap=cmaps.Reds)
+                sub_plot.set_xlabel('Time')
+                sub_plot.set_ylabel('Temperature (C)')
+                sub_plot.set_title(self._sensor_name + ": " + self._context[i])
+                i+=1
+            plt.subplots_adjust(wspace=0.2, hspace=1)
+            
+            return sub_plots
+        else:
+            pixs = self._data
+            i = 0
+            for pix in pixs[0:]:
+                sub_plot = subplots[i]
+                y = zip(*pix)[1]
+                sub_plot.pcolor(np.array([y]), cmap=cmaps.Reds)
+                sub_plot.set_xlabel('Time')
+                sub_plot.set_ylabel('Temperature (C)')
+                sub_plot.set_title(self._sensor_name + ": " + self._context[i])
+                i+=1
+            plt.subplots_adjust(wspace=0.2, hspace=1)
