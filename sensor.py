@@ -402,6 +402,28 @@ class GridSensor(Sensor):
                 j+=1
 
         self._data = pixels 
+        
+    def sort_by_time(self):
+        """Sort the data in the GridSensor by time.
+
+        :return     : None
+        :rtype      : None
+        """
+        data = []
+        pixs = self._data
+        n = len(pixs[0])
+        
+        for i in range(n):
+            time = pixs[0][i][0]
+            dpoint = []
+            for pix in pixs:
+                point = pix[i][1]
+                dpoint.append(point)
+                
+            val = (time, dpoint)
+            data.append(val)
+            
+        self._data = data
     
     def plot_timeseries(self, subplots=None):
         """Create a timeseries plot for each pixel in the grid
@@ -455,6 +477,7 @@ class GridSensor(Sensor):
         """
         if subplots == None:
             pixs = self._data
+            fig = plt.figure()
             sub_plots = []
             l = 4
             w = 4
@@ -463,10 +486,10 @@ class GridSensor(Sensor):
                 for j in range(w):
                     sub_plot = plt.subplot2grid(grid, (i, j), rowspan=1, colspan=1)
                     sub_plots.append(sub_plot)
-
-            i = 0
-            for pix in pixs[0:]:
-                sub_plot = sub_plots[i]
+         
+            i = 1
+            for sub_plot in sub_plots:
+                pix = pixs[i]
                 y = zip(*pix)[1]
                 sub_plot.pcolor(np.array([y]), cmap=cmaps.Reds)
                 sub_plot.set_xlabel('Time')
