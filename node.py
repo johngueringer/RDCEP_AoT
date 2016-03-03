@@ -163,9 +163,9 @@ class Node(object):
         """
         return dt.datetime.strptime(s, '%m/%d/%y %H:%M:%S')
     
-    def plot_all(self):
+    def plot_timeseries(self):
         """Plot data contained in all the sensors of the AoT node."""
-        fig = plt.figure()
+        fig = plt.figure(figsize=(11, 8))
         sub_plots = []
         l = 5
         w = 3
@@ -174,7 +174,8 @@ class Node(object):
             for j in range(w):
                 sub_plot = plt.subplot2grid(grid, (i, j), rowspan=1, colspan=1)
                 sub_plots.append(sub_plot)
-
+                
+        sub_plots = sub_plots[:14]
         i = 0
         sensors = self._sensors.iteritems()
         for sensor in sensors:
@@ -183,7 +184,7 @@ class Node(object):
                 sensor.plot_heatmap()
             else:
                 sensor.plot_timeseries(sub_plots[i])
+                plt.subplots_adjust(wspace=0.7, hspace=1)
                 i+=1
         
-        plt.subplots_adjust(wspace=0.5, hspace=1.2)
         plt.show()

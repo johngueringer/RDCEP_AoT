@@ -100,7 +100,7 @@ class Sensor(object):
             strt = x[1].strftime("%m/%d/%y")
             stp = x[n - 1].strftime("%m/%d/%y")
 
-            xlab = 'Time of Day'
+            xlab = 'Time'
             ylab_tmpl = '{} ({})'
             ylab = ylab_tmpl.format(type0, units)
             title_tmpl = '{}: {}\n{} - {}'
@@ -109,9 +109,6 @@ class Sensor(object):
             fig = plt.figure() 
             ax1 = plt.subplot()
             ax1.plot(x, y, 'r-', label=type)
-            handles, labels = ax1.get_legend_handles_labels()
-            ax1.legend(handles, labels, loc='upper left', bbox_to_anchor=(0.95, 1))
-            #ax1.gcf().autofmt_xdate()
             ax1.set_xlabel(xlab)
             ax1.set_ylabel(ylab)
             ax1.set_title(title)
@@ -131,15 +128,13 @@ class Sensor(object):
             strt = x[1].strftime("%m/%d/%y")
             stp = x[n - 1].strftime("%m/%d/%y")
 
-            xlab = 'Time of Day'
+            xlab = 'Time'
             ylab_tmpl = '{} ({})'
             ylab = ylab_tmpl.format(type0, units)
             title_tmpl = '{}: {}\n{} - {}'
             title = title_tmpl.format(name, type0, strt, stp)
-
             subplot.plot(x, y, 'r-', label=type0)
             handles, labels = subplot.get_legend_handles_labels()
-            subplot.legend(handles, labels, loc='upper left', bbox_to_anchor=(0.95, 1))
             subplot.set_xlabel(xlab)
             subplot.set_ylabel(ylab)
             subplot.set_title(title)
@@ -221,7 +216,7 @@ class DualSensor(Sensor):
             strt = x[1].strftime("%m/%d/%y")
             stp = x[n - 1].strftime("%m/%d/%y")
 
-            xlab = 'Time of Day'
+            xlab = 'Time'
 
             ylab_tmpl = '{} ({})'
             y1lab = ylab_tmpl.format(type1, unit1)
@@ -232,17 +227,18 @@ class DualSensor(Sensor):
 
             fig = plt.figure() 
             ax1 = plt.subplot()
-            ax1.plot(x, y1, 'r-', label=y1lab)
-            handles, labels = ax1.get_legend_handles_labels()
-            ax1.legend(handles, labels, loc='upper left', bbox_to_anchor=(0.95, 1))
+            ln1 = ax1.plot(x, y1, 'r-', label=y1lab)
+            ax2 = ax1.twinx()
+            ln2 = ax2.plot(x, y2, 'b-', label=y2lab)
+            
+            lns = ln1 + ln2
+            labs = [l.get_label() for l in lns]
+            ax1.legend(lns, labs, loc='upper left', bbox_to_anchor=(0.95, 1), labelspacing=0.5)
+            
             ax1.set_xlabel(xlab)
             ax1.set_ylabel(y1lab)
             ax1.set_title(title)
 
-            ax2 = ax1.twinx()
-            ax2.plot(x, y2, 'b-', label=y2lab)
-            handles, labels = ax2.get_legend_handles_labels()
-            ax2.legend(handles, labels, loc='upper left', bbox_to_anchor=(0.95, 0.95))
             ax2.set_ylabel(y2lab)
 
             return ax1, ax2
@@ -265,7 +261,7 @@ class DualSensor(Sensor):
             strt = x[1].strftime("%m/%d/%y")
             stp = x[n - 1].strftime("%m/%d/%y")
 
-            xlab = 'Time of Day'
+            xlab = 'Time'
 
             ylab_tmpl = '{} ({})'
             y1lab = ylab_tmpl.format(type1, unit1)
@@ -274,17 +270,18 @@ class DualSensor(Sensor):
             title_tmpl = '{}: {} and {}\n{} - {}'
             title = title_tmpl.format(name, type1, type2, strt, stp)
 
-            subplot.plot(x, y1, 'r-', label=y1lab)
-            handles, labels = subplot.get_legend_handles_labels()
-            subplot.legend(handles, labels, loc='upper left', bbox_to_anchor=(0.95, 1))
+            ln1 = subplot.plot(x, y1, 'r-', label=y1lab)
+            ax2 = subplot.twinx()
+            ln2 = ax2.plot(x, y2, 'b-', label=y2lab)
+            
+            lns = ln1 + ln2
+            labs = [l.get_label() for l in lns]
+            subplot.legend(lns, labs, loc='upper left', bbox_to_anchor=(0.95, 1), labelspacing=0.5)
+            
             subplot.set_xlabel(xlab)
             subplot.set_ylabel(y1lab)
             subplot.set_title(title)
 
-            ax2 = subplot.twinx()
-            ax2.plot(x, y2, 'b-', label=y2lab)
-            handles, labels = ax2.get_legend_handles_labels()
-            ax2.legend(handles, labels, loc='upper left', bbox_to_anchor=(0.95, 0.95))
             ax2.set_ylabel(y2lab)
     
     def plot_correlation(self):
@@ -496,7 +493,7 @@ class GridSensor(Sensor):
                 sub_plot.set_ylabel('Temperature (C)')
                 sub_plot.set_title(self._sensor_name + ": " + self._context[i])
                 i+=1
-            plt.subplots_adjust(wspace=0.2, hspace=1)
+            plt.subplots_adjust(wspace=0.2, hspace=0.2)
             
             return sub_plots
         else:
@@ -510,4 +507,4 @@ class GridSensor(Sensor):
                 sub_plot.set_ylabel('Temperature (C)')
                 sub_plot.set_title(self._sensor_name + ": " + self._context[i])
                 i+=1
-            plt.subplots_adjust(wspace=0.2, hspace=1)
+            plt.subplots_adjust(wspace=0.2, hspace=0.2)
