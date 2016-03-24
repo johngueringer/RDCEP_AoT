@@ -5,6 +5,7 @@ import datetime as dt
 from ConfigParser import ConfigParser
 from constants import SENSOR_CODES, GRID_SENSOR, DATA_URI
 import numpy as np
+from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib as mtplt
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
@@ -96,15 +97,11 @@ class Sensor(object):
             type0 = type0[0]
             units = units[0]
 
-            n = len(x)
-            strt = x[1].strftime("%m/%d/%y")
-            stp = x[n - 1].strftime("%m/%d/%y")
-
             xlab = 'Time'
             ylab_tmpl = '{} ({})'
             ylab = ylab_tmpl.format(type0, units)
-            title_tmpl = '{}: {}\n{} - {}'
-            title = title_tmpl.format(name, type0, strt, stp)
+            title_tmpl = '{}: \n{}'
+            title = title_tmpl.format(name, type0)
 
             fig = plt.figure() 
             ax1 = plt.subplot()
@@ -124,17 +121,12 @@ class Sensor(object):
             type0 = type0[0]
             units = units[0]
 
-            n = len(x)
-            strt = x[1].strftime("%m/%d/%y")
-            stp = x[n - 1].strftime("%m/%d/%y")
-
             xlab = 'Time'
             ylab_tmpl = '{} ({})'
             ylab = ylab_tmpl.format(type0, units)
-            title_tmpl = '{}: {}\n{} - {}'
-            title = title_tmpl.format(name, type0, strt, stp)
+            title_tmpl = '{}: \n{}'
+            title = title_tmpl.format(name, type0)
             subplot.plot(x, y, 'r-', label=type0)
-            handles, labels = subplot.get_legend_handles_labels()
             subplot.set_xlabel(xlab)
             subplot.set_ylabel(ylab)
             subplot.set_title(title)
@@ -212,34 +204,33 @@ class DualSensor(Sensor):
             unit1 = units[0]
             unit2 = units[1]
 
-            n = len(x)
-            strt = x[1].strftime("%m/%d/%y")
-            stp = x[n - 1].strftime("%m/%d/%y")
-
             xlab = 'Time'
 
             ylab_tmpl = '{} ({})'
             y1lab = ylab_tmpl.format(type1, unit1)
             y2lab = ylab_tmpl.format(type2, unit2)
 
-            title_tmpl = '{}: {} and {}\n{} - {}'
-            title = title_tmpl.format(name, type1, type2, strt, stp)
+            title_tmpl = '{}: \n{} and {}'
+            title = title_tmpl.format(name, type1, type2)
 
             fig = plt.figure() 
             ax1 = plt.subplot()
-            ln1 = ax1.plot(x, y1, 'r-', label=y1lab)
+            ax1.plot(x, y1, 'r-', label=y1lab)
             ax2 = ax1.twinx()
-            ln2 = ax2.plot(x, y2, 'b-', label=y2lab)
-            
-            lns = ln1 + ln2
-            labs = [l.get_label() for l in lns]
-            ax1.legend(lns, labs, loc='upper left', bbox_to_anchor=(0.95, 1), labelspacing=0.5)
+            ax2.plot(x, y2, 'b-', label=y2lab)
             
             ax1.set_xlabel(xlab)
             ax1.set_ylabel(y1lab)
             ax1.set_title(title)
+            ax1.spines['left'].set_color('red')
+            ax1.tick_params(axis='y', colors='red')
+            ax1.yaxis.label.set_color('red')
 
             ax2.set_ylabel(y2lab)
+            ax2.spines['right'].set_color('blue')
+            ax2.spines['left'].set_color('red')
+            ax2.tick_params(axis='y', colors='blue')
+            ax2.yaxis.label.set_color('blue')
 
             return ax1, ax2
         else:
@@ -256,33 +247,33 @@ class DualSensor(Sensor):
             type2 = types[1]
             unit1 = units[0]
             unit2 = units[1]
-
-            n = len(x)
-            strt = x[1].strftime("%m/%d/%y")
-            stp = x[n - 1].strftime("%m/%d/%y")
-
+            
             xlab = 'Time'
 
             ylab_tmpl = '{} ({})'
             y1lab = ylab_tmpl.format(type1, unit1)
             y2lab = ylab_tmpl.format(type2, unit2)
 
-            title_tmpl = '{}: {} and {}\n{} - {}'
-            title = title_tmpl.format(name, type1, type2, strt, stp)
+            title_tmpl = '{}: \n{} and {}'
+            title = title_tmpl.format(name, type1, type2)
 
-            ln1 = subplot.plot(x, y1, 'r-', label=y1lab)
+            subplot.plot(x, y1, 'r-', label=y1lab)
             ax2 = subplot.twinx()
-            ln2 = ax2.plot(x, y2, 'b-', label=y2lab)
-            
-            lns = ln1 + ln2
-            labs = [l.get_label() for l in lns]
-            subplot.legend(lns, labs, loc='upper left', bbox_to_anchor=(0.95, 1), labelspacing=0.5)
+            ax2.plot(x, y2, 'b-', label=y2lab)
             
             subplot.set_xlabel(xlab)
             subplot.set_ylabel(y1lab)
             subplot.set_title(title)
+            subplot.spines['left'].set_color('red')
+            subplot.tick_params(axis='y', colors='red')
+            subplot.yaxis.label.set_color('red')
 
             ax2.set_ylabel(y2lab)
+            ax2.spines['right'].set_color('blue')
+            ax2.spines['left'].set_color('red')
+            ax2.tick_params(axis='y', colors='blue')
+            ax2.yaxis.label.set_color('blue')
+            
     
     def plot_correlation(self):
         """Correlate the two sets of data in the DualSensor and plot
@@ -422,6 +413,221 @@ class GridSensor(Sensor):
             
         self._data = data
     
+    def smooth(self, hrs):
+        delta = dt.timedelta(hours=hrs)
+        pixs = self._data[1:]
+        avgs = []
+        for i in range(len(pixs)):
+            avg = []
+            avgs.append(avg)
+            
+        i = 0
+        for pix in pixs:
+            strt = pix[0][0]
+            tot = 0
+            n = 0
+            j = 0
+            for p in pix:
+                currt = p[0]
+                diff = strt + delta
+                if diff > currt:
+                    tot += p[1]
+                    n += 1
+                    j += 1
+                else:
+                    avg = tot / n
+                    point = (strt, avg)
+                    avgs[i].append(point)
+                    strt = currt
+                    tot = 0
+                    n = 0
+                    
+                if j + 1 == len(p):
+                    avg = tot / n
+                    point = (strt, avg)
+                    avgs[i].append(point)
+                    tot = 0
+                    n = 0
+            i += 1
+        
+        return avgs
+        
+    def plot_heatmap(self, hrs):
+        avgs = self.smooth(hrs)
+        row_labels = list('1234')
+        column_labels = list('1234')
+        arr = []
+        times = []
+        mins = []
+        maxs = []
+        j = 0
+        for i in range(len(avgs[0])):
+            j = 0
+            darr = [[],[],[],[]]
+            for avg in avgs:
+                if j > 3:
+                    j = 0
+                darr[j].append(avg[i][1])
+                j+=1
+
+            time = avgs[0][i][0]
+            point = (time, np.array(darr))
+            arr.append(point)
+
+        for time, data in arr:
+            mini = data.min()
+            maxi = data.max()
+
+            mins.append(mini)
+            maxs.append(maxi)
+
+        minis = np.array(mins)
+        maxis = np.array(maxs)
+
+        mini = int(minis.min())
+        maxi = int(maxis.max())
+        
+        fig = plt.figure(figsize=(8, 11))
+        fig.suptitle(self.sensor_name, fontsize='x-large')
+        pp = PdfPages('IR_Grid.pdf')
+        i = 0
+        for time, data in arr:
+            sub_plot = plt.subplot()
+            title = str(time.hour) + ":00"
+            sub_plot.pcolor(data, cmap=cmaps.Reds, vmin=mini, vmax=maxi)
+
+            sub_plot.set_xticks(np.arange(data.shape[0])+0.5, minor=False)
+            sub_plot.set_yticks(np.arange(data.shape[1])+0.5, minor=False)
+
+            sub_plot.invert_yaxis()
+            sub_plot.xaxis.tick_top()
+
+            sub_plot.set_xticklabels(row_labels, minor=False)
+            sub_plot.set_yticklabels(column_labels, minor=False)
+            sub_plot.set_title(title)
+            pp.savefig()
+            i+=1
+
+        pp.close()
+        
+    def view_grid(self):
+        avgs2 = self.smooth(2)
+        avgs24 = self.smooth(23)
+        row_labels = list('1234')
+        column_labels = list('1234')
+        arr = []
+        mins = []
+        maxs = []
+        j = 0
+        for i in range(len(avgs2[0])):
+            j = 0
+            darr = [[],[],[],[]]
+            for avg in avgs2:
+                if j > 3:
+                    j = 0
+                darr[j].append(avg[i][1])
+                j+=1
+
+            time = avgs2[0][i][0]
+            point = (time, np.array(darr))
+            arr.append(point)
+
+        for time, data in arr:
+            mini = data.min()
+            maxi = data.max()
+
+            mins.append(mini)
+            maxs.append(maxi)
+
+        minis = np.array(mins)
+        maxis = np.array(maxs)
+
+        mini = int(minis.min())
+        maxi = int(maxis.max())
+        fig = plt.figure(figsize=(11, 8))
+        fig.suptitle(self._sensor_name, fontsize='x-large')
+        sub_plots = []
+        grid = (4, 8)
+        for i in range(2):
+            for j in range(6):
+                sub_plot = plt.subplot2grid(grid, (i, j), rowspan=1, colspan=1)
+                sub_plots.append(sub_plot)
+                
+        hmap = plt.subplot2grid(grid, (0, 6), rowspan=2, colspan=2)
+        tser = plt.subplot2grid(grid, (2, 0), rowspan=2, colspan=8)
+        
+        sub_plots.append(hmap)
+        sub_plots.append(tser)
+        
+        i = 0
+        for time, data in arr:
+            sub_plot = sub_plots[i]
+            title = str(time.hour) + ":00"
+            sub_plot.pcolor(data, cmap=cmaps.Reds, vmin=mini, vmax=maxi)
+
+            sub_plot.set_xticks(np.arange(data.shape[0])+0.5, minor=False)
+            sub_plot.set_yticks(np.arange(data.shape[1])+0.5, minor=False)
+
+            sub_plot.invert_yaxis()
+            sub_plot.xaxis.tick_top()
+
+            sub_plot.set_xticklabels(row_labels, minor=False)
+            sub_plot.set_yticklabels(column_labels, minor=False)
+            sub_plot.set_title(title)
+            i+=1
+            
+        arr1 = []
+        mins1 = []
+        maxs1 = []
+        j = 0
+        for i in range(len(avgs24[0])):
+            j = 0
+            darr = [[],[],[],[]]
+            for avg in avgs24:
+                if j > 3:
+                    j = 0
+                darr[j].append(avg[i][1])
+                j+=1
+
+            time = avgs24[0][i][0]
+            point = (time, np.array(darr))
+            arr1.append(point)
+
+        for time, data in arr1:
+            mini = data.min()
+            maxi = data.max()
+
+            mins1.append(mini)
+            maxs1.append(maxi)
+
+        minis1 = np.array(mins1)
+        maxis1 = np.array(maxs1)
+
+        mini1 = int(minis1.min())
+        maxi1 = int(maxis1.max())
+        
+        hmap = sub_plots[12]
+        time = arr[0][0]
+        data = arr[0][1]
+        title = str(time.hour) + ":00"
+        hmap.pcolor(data, cmap=cmaps.Reds, vmin=mini1, vmax=maxi1)
+
+        hmap.set_xticks(np.arange(data.shape[0])+0.5, minor=False)
+        hmap.set_yticks(np.arange(data.shape[1])+0.5, minor=False)
+
+        hmap.invert_yaxis()
+        hmap.xaxis.tick_top()
+
+        hmap.set_xticklabels(row_labels, minor=False)
+        hmap.set_yticklabels(column_labels, minor=False)
+        hmap.set_title(title)
+        
+        tser = sub_plots[13]
+        self.plot_timeseries(tser)
+        plt.subplots_adjust(wspace=0.2, hspace=0.4)
+        fig.savefig('IR_Grid.png')
+        plt.show()
+    
     def plot_timeseries(self, subplots=None):
         """Create a timeseries plot for each pixel in the grid
 
@@ -465,7 +671,7 @@ class GridSensor(Sensor):
                 i+=1
             plt.subplots_adjust(wspace=0.2, hspace=1)
     
-    def plot_heatmap(self, subplots=None):
+    def plot_colorbar(self, subplots=None):
         """Create a heatmap for each pixel in the grid
         :param subplot : None
         :type  subplot : plt.subplot
@@ -508,3 +714,61 @@ class GridSensor(Sensor):
                 sub_plot.set_title(self._sensor_name + ": " + self._context[i])
                 i+=1
             plt.subplots_adjust(wspace=0.2, hspace=0.2)
+    
+    def plot_timeseries(self, subplot=None):
+        """Create a timeseries plot from the data in the Sensor.
+
+        :param subplot : None
+        :type  subplot : plt.subplot
+        :return        : Subplot of timeseries
+        :rtype         : plt.subplot
+        """
+        if subplot is None:
+            data = self._data
+            dtype = self._dtype
+            name = self._sensor_name
+
+            type0, units = zip(*dtype)
+            type0 = type0[0]
+            units = units[0]
+
+            xlab = 'Time'
+            ylab_tmpl = '{} ({})'
+            ylab = ylab_tmpl.format(type0, units)
+            title_tmpl = '{}: \n{}'
+            title = title_tmpl.format(name, type0)
+
+            fig = plt.figure() 
+            ax1 = plt.subplot()
+            pixs = self._data[0:]
+            for pix in pixs:
+                x, y = zip(*pix)
+                ax1.plot(x, y, 'r-', label=type)
+            ax1.set_xlabel(xlab)
+            ax1.set_ylabel(ylab)
+            ax1.set_title(title)
+
+            return ax1
+        else:
+            data = self._data
+            dtype = self._dtype
+            name = self._sensor_name
+
+            type0, units = zip(*dtype)
+            type0 = type0[0]
+            units = units[0]
+
+            xlab = 'Time'
+            ylab_tmpl = '{} ({})'
+            ylab = ylab_tmpl.format(type0, units)
+            title_tmpl = '{}: \n{}'
+            title = title_tmpl.format(name, type0)
+            
+            pixs = self._data[0:]
+            for pix in pixs:
+                x, y = zip(*pix)
+                subplot.plot(x, y, 'r-', label=type0)
+            subplot.set_xlabel(xlab)
+            subplot.set_ylabel(ylab)
+            subplot.set_title(title)
+            

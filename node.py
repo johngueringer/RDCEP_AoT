@@ -33,12 +33,20 @@ class Node(object):
             delta = dt.timedelta(days=1)
             yesterday = today - delta
             ydate = yesterday.strftime("%m-%d-%y")
+            self._strt_dte = ydate
+            self._stp_dte = ydate
             self.pull_all(ydate, ydate)
         elif strt == None:
+            self._strt_dte = stp
+            self._stp_dte = stp
             self.pull_all(stp, stp)
         elif stp == None:
+            self._strt_dte = strt
+            self._stp_dte = strt
             self.pull_all(strt, strt)
         else:
+            self._strt_dte = strt
+            self._stp_dte = stp
             self.pull_all(strt, stp)
 
     @property
@@ -52,6 +60,14 @@ class Node(object):
     @property
     def sensors(self):
         return self._sensors
+    
+    @property
+    def strt_dte(self):
+        return self._strt_dte
+    
+    @property
+    def stp_dte(self):
+        return self._stp_dte
 
     def sensor(self, code):
         return next((v for k, v in self.sensors.iteritems() if k == code), None)
@@ -165,26 +181,27 @@ class Node(object):
     
     def plot_timeseries(self):
         """Plot data contained in all the sensors of the AoT node."""
-        fig = plt.figure(figsize=(11, 8))
+        fig = plt.figure(figsize=(25, 15))
+        figtitle = "AoT Node: {}\n{} - {}"
+        figtitle = figtitle.format(self._node, self._strt_dte, self._stp_dte)
+        fig.suptitle(figtitle, fontsize='x-large')
+        
         sub_plots = []
-        l = 5
-        w = 3
+        l = 3
+        w = 5
         grid = (l, w)
         for i in range(l):
             for j in range(w):
                 sub_plot = plt.subplot2grid(grid, (i, j), rowspan=1, colspan=1)
                 sub_plots.append(sub_plot)
                 
-        sub_plots = sub_plots[:14]
         i = 0
         sensors = self._sensors.iteritems()
         for sensor in sensors:
             sensor = sensor[1]
-            if isinstance(sensor, GridSensor):
-                sensor.plot_heatmap()
-            else:
-                sensor.plot_timeseries(sub_plots[i])
-                plt.subplots_adjust(wspace=0.7, hspace=1)
-                i+=1
-        
+            sensor.plot_timeseries(sub_plots[i])
+            plt.subplots_adjust(wspace=0.5, hspace=0.5)
+            i+=1
+        fig.autofmt_xdate()
+        fig.savefig(self._node + ".png")
         plt.show()
