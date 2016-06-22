@@ -24,9 +24,8 @@ class Node(object):
         sensors  : dict    : Dictionary of Sensor objects
     """
 
-    def __init__(self, node, strt=None, stp=None):
+    def __init__(self, node, dtypes=None, strt=None, stp=None):
         self._node = node
-        self._sensors = {k: [] for k in SENSOR_CODES}
         
         if strt == None and stp == None:
             today = dt.datetime.now()
@@ -35,19 +34,31 @@ class Node(object):
             ydate = yesterday.strftime("%m-%d-%y")
             self._strt_dte = ydate
             self._stp_dte = ydate
-            self.pull_all(ydate, ydate)
-        elif strt == None:
-            self._strt_dte = stp
-            self._stp_dte = stp
-            self.pull_all(stp, stp)
+            if not dtypes:
+                self._sensors = {k: [] for k in SENSOR_CODES}
+                self.pull_all(ydate, ydate)
+            else:
+                self._sensors = {}
+                self.pull_select(dtypes, ydate, ydate)
+        
         elif stp == None:
             self._strt_dte = strt
             self._stp_dte = strt
-            self.pull_all(strt, strt)
+            if not dtypes:
+                self._sensors = {k: [] for k in SENSOR_CODES}
+                self.pull_all(strt, strt)
+            else:
+                self._sensors = {}
+                self.pull_select(dtypes, strt, strt)
         else:
             self._strt_dte = strt
             self._stp_dte = stp
-            self.pull_all(strt, stp)
+            if not dtypes:
+                self._sensors = {k: [] for k in SENSOR_CODES}
+                self.pull_all(strt, stp)
+            else:
+                self._sensors = {}
+                self.pull_select(dtypes, strt, stp)
 
     @property
     def latlon(self):
@@ -122,7 +133,62 @@ class Node(object):
                 
         grid_sensor = self.sensor('D6T-44L-06')
         grid_sensor.sort_by_pixel()
+        
+    def pull_select(self, dtypes, strt, stp):
+        urls = self.makeURLs(strt, stp)
+        sensors = {'MLX90614ESF-DAA': Sensor,
+                       'D6T-44L-06': GridSensor,
+                       'TMP421': Sensor,
+                       'BMP180': DualSensor,
+                       'PDV_P8104': Sensor,
+                       'Thermistor_NTC_PR103J2': Sensor,
+                       'HIH6130': DualSensor,
+                       'SHT15': DualSensor,
+                       'DS18B20': Sensor,
+                       'RHT03': DualSensor,
+                       'SHT75': DualSensor,
+                       'HIH4030': Sensor,
+                       'GA1A1S201WP': Sensor,
+                       'MAX4466': Sensor,
+                       'HTU21D': DualSensor}
+        
+        for url in urls:
+          #  try:
+            request = urllib2.Request(url)
+            handle = urllib2.urlopen(request)
+            lines = handle.readlines()
 
+            for line in lines[:15]:
+                arr = self.get_type_from_line(line)
+                if set(arr).intersection(dtypes):
+                    code = line.split(',')[0].split('.')[0]
+                    self._sensors[code] = sensors[code](code)
+                    self.sensor(code).add_point(line)
+          
+            for line in lines[15:]:
+                arr = self.get_type_from_line(line)
+                if set(arr).intersection(dtypes):
+                    code = line.split(',')[0].split('.')[0]
+                    try:
+                        self.sensor(code).add_point(line)
+                    except:
+                        self._sensors[code] = sensors[code](code)
+                        self.sensor(code).add_point(line)
+                    
+          #  except:
+          #      print "Missing data from: " + url
+        
+    def get_type_from_line(self, line):
+        arr = line.split(",")
+        data = arr[2:]
+        dtypes = []
+        
+        for datum in data:
+            parts = datum.split(";")
+            dtypes.append(parts[0])
+        
+        return dtypes
+    
     def makeURLs(self, strt_dte, stp_dte):
         """Generate a list of URLs from which to pull AoT data.
 
