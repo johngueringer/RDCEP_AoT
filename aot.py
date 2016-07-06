@@ -16,7 +16,9 @@ class AoT(object):
     """AoT class for encapsulating a list of Node objects:
 
     INSTANCE VARIABLES
-        nodes   :   Array   : List of Nodes
+        nodes    : Dict    : Dictionary of Nodes
+        strt_dte : str     : Starting date for AoT data retrieval
+        stp_dte  : str     : Ending date for AoT data retrieval
     """
     def __init__(self, nodes, dtypes=None, strt=None, stp=None):
         self._nodes = {}
@@ -53,7 +55,28 @@ class AoT(object):
                 self.pull_from(nodes, strt, stp, dtypes)
     
     def pull_from(self, nodes, strt, stp, dtypes=None):
-       for node in nodes:
+        """Pulls data from designated AoT nodes from the specified start time to
+           the specified stop time. Optional ablity to also designate the types 
+           of data to pull.
+           
+           :param nodes  : List of strings representing the desired nodes
+           :type  nodes  : list
+
+           :param strt   : First date from which to start pulling data
+           :type  strt   : str
+
+           :param stp    : Last date from which data will be pulled
+           :type  stp    : str
+           
+           :param dtypes : List of the types of data to be pulled
+           :type  dtypes : List
+
+           :return       : This method stores the data from wa8.gl in appropriate
+                           Node and Sensor objects
+                        
+           :rtype        : None
+        """
+        for node in nodes:
             if dtypes == None:
                anode = Node(node, strt, stp)
             else:

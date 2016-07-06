@@ -20,8 +20,10 @@ class Node(object):
     """Node class for encapsulating AoT sensor data:
 
     INSTANCE VARIABLES
-        node     : str     : name of the AoT node
+        node     : str     : Name of the AoT node
         sensors  : dict    : Dictionary of Sensor objects
+        strt_dte : str     : Starting date for AoT data retrieval
+        stp_dte  : str     : Ending date for AoT data retrieval
     """
 
     def __init__(self, node, dtypes=None, strt=None, stp=None):
@@ -131,10 +133,29 @@ class Node(object):
             except:
                 print "Missing data from: " + url
                 
-        grid_sensor = self.sensor('D6T-44L-06')
-        grid_sensor.sort_by_pixel()
+        grid = self.sensor('D6T-44L-06')
+        grid.sort_by_pixel()
         
     def pull_select(self, dtypes, strt, stp):
+        """Pull the designated AoT sensor data from the specified start time to
+        the specified stop time; store the data in the Sensor objects of
+        the sensors dictionary.
+        
+        :param dtypes : List of the types of data to be pulled
+        :type  dtypes : List
+
+        :param strt   : First date from which to start pulling data
+        :type  strt   : str
+
+        :param stp    : Last date from which data will be pulled
+        :type  stp    : str
+
+        :return       : This method stores the data from wa8.gl in appropriate
+                        Sensor objects
+                        
+        :rtype        : None
+
+        """
         urls = self.makeURLs(strt, stp)
         sensors = {'MLX90614ESF-DAA': Sensor,
                        'D6T-44L-06': GridSensor,
@@ -150,11 +171,12 @@ class Node(object):
                        'HIH4030': Sensor,
                        'GA1A1S201WP': Sensor,
                        'MAX4466': Sensor,
-                       'HTU21D': DualSensor}
+                       'HTU21D': DualSensor,
+                       'TMP102': Sensor}
         
-        for url in urls:
-          #  try:
-            request = urllib2.Request(url)
+        samp_url = urls[0]
+        try:
+            request = urllib2.Request(samp_url)
             handle = urllib2.urlopen(request)
             lines = handle.readlines()
 
@@ -164,7 +186,7 @@ class Node(object):
                     code = line.split(',')[0].split('.')[0]
                     self._sensors[code] = sensors[code](code)
                     self.sensor(code).add_point(line)
-          
+
             for line in lines[15:]:
                 arr = self.get_type_from_line(line)
                 if set(arr).intersection(dtypes):
@@ -174,11 +196,38 @@ class Node(object):
                     except:
                         self._sensors[code] = sensors[code](code)
                         self.sensor(code).add_point(line)
+
+        except urllib2.HTTPError, err:
+            print "Invalid URL: " + url
+        
+        for url in urls[1:]:
+            try:
+                request = urllib2.Request(url)
+                handle = urllib2.urlopen(request)
+                lines = handle.readlines()
+
+                for line in lines:
+                    arr = self.get_type_from_line(line)
+                    if set(arr).intersection(dtypes):
+                        code = line.split(',')[0].split('.')[0]
+                        self.sensor(code).add_point(line)
                     
-          #  except:
-          #      print "Missing data from: " + url
+            except urllib2.HTTPError, err:
+                print "Invalid URL: " + url
+                
+        if 'D6T-44L-06' in self._sensors.keys():
+            grid = self._sensors['D6T-44L-06']
+            grid.sort_by_pixel()
         
     def get_type_from_line(self, line):
+        """Determines the type of data a formatted string contains
+        
+        :param line : Formatted string containing data
+        :type  line : str
+        
+        :return     : Returns list of data types found in the string
+        :rtype      :list
+        """
         arr = line.split(",")
         data = arr[2:]
         dtypes = []
@@ -256,18 +305,22 @@ class Node(object):
         l = 3
         w = 5
         grid = (l, w)
-        for i in range(l):
-            for j in range(w):
-                sub_plot = plt.subplot2grid(grid, (i, j), rowspan=1, colspan=1)
-                sub_plots.append(sub_plot)
                 
         i = 0
+        j = 0
+        k = 0
         sensors = self._sensors.iteritems()
         for sensor in sensors:
             sensor = sensor[1]
-            sensor.plot_timeseries(sub_plots[i])
+            if k >= l:
+                k = 0
+                j+=1
+            sub_plot = plt.subplot2grid(grid, (k, j), rowspan=1, colspan=1)
+            sensor.plot_timeseries(sub_plot)
             plt.subplots_adjust(wspace=0.5, hspace=0.5)
             i+=1
+            k+=1
+            
         fig.autofmt_xdate()
         fig.savefig(self._node + ".png")
         plt.show()

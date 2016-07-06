@@ -20,7 +20,7 @@ class Sensor(object):
         code        :  str   : Model of the AoT sensor
         data        :  list  : list of data points (datetime, float) tuples
         sensor_name :  str   : Full name of sensor
-        dtype       :  list  : list of types of data (type of data, units) tuples
+        dtype       :  list  : list of types of data (type, units) tuples
         context     :  str   : Additional sensor info
     """
     def __init__(self, code):
@@ -186,6 +186,7 @@ class DualSensor(Sensor):
 
         :param subplot : None
         :type  subplot : plt.subplot
+        
         :return        : Subplot of timeseries
         :rtype         : plt.subplot
         """
@@ -414,6 +415,12 @@ class GridSensor(Sensor):
         self._data = data
     
     def smooth(self, hrs):
+        """Smooths data from the GridSensor to designated hour averages 
+           (i.e. every 2hrs, 3hrs, etc)
+           
+           :return : List of averaged GridSensor data
+           :rtype  : list
+        """
         delta = dt.timedelta(hours=hrs)
         pixs = self._data[1:]
         avgs = []
@@ -453,6 +460,18 @@ class GridSensor(Sensor):
         return avgs
         
     def plot_heatmap(self, hrs):
+        """Creates PDF containing heatmaps of the GridSensor. Each page is an 
+           instance of the heatmap at a different point in time. GridSensor data
+           is smoothed to intervals spanning the inputted number of hours (i.e. 
+           every 2hrs, 3hrs, etc.)
+           
+           :param hrs : Number of hours to smooth by
+           :type  hrs : int
+           
+           :return : Exports PDF file of heatmap
+           :rtype  : None
+        """
+        
         avgs = self.smooth(hrs)
         row_labels = list('1234')
         column_labels = list('1234')
@@ -504,13 +523,21 @@ class GridSensor(Sensor):
 
             sub_plot.set_xticklabels(row_labels, minor=False)
             sub_plot.set_yticklabels(column_labels, minor=False)
-            sub_plot.set_title(title)
+            sub_plot.set_title(title, y=1.02)
             pp.savefig()
             i+=1
 
         pp.close()
         
+        
     def view_grid(self):
+        """Creates visualization of the AoT IR grid in the form of 12 two hour
+           averaged heatmaps, one 24 hour average heatmap, and a timeseries for
+           of the data in the GridSensor
+           
+           :return : Exports PNG file of plots
+           :rtype  : None
+        """
         avgs2 = self.smooth(2)
         avgs24 = self.smooth(23)
         row_labels = list('1234')
@@ -573,7 +600,7 @@ class GridSensor(Sensor):
 
             sub_plot.set_xticklabels(row_labels, minor=False)
             sub_plot.set_yticklabels(column_labels, minor=False)
-            sub_plot.set_title(title)
+            sub_plot.set_title(title, y=1.14)
             i+=1
             
         arr1 = []
@@ -620,7 +647,7 @@ class GridSensor(Sensor):
 
         hmap.set_xticklabels(row_labels, minor=False)
         hmap.set_yticklabels(column_labels, minor=False)
-        hmap.set_title(title)
+        hmap.set_title(title, y=1.06)
         
         tser = sub_plots[13]
         self.plot_timeseries(tser)
@@ -670,50 +697,6 @@ class GridSensor(Sensor):
                 sub_plot.set_title(self._sensor_name + ": " + self._context[i])
                 i+=1
             plt.subplots_adjust(wspace=0.2, hspace=1)
-    
-    def plot_colorbar(self, subplots=None):
-        """Create a heatmap for each pixel in the grid
-        :param subplot : None
-        :type  subplot : plt.subplot
-        :return      : List of subplots for the pixels in the grid
-        :rtype       : list
-        """
-        if subplots == None:
-            pixs = self._data
-            fig = plt.figure()
-            sub_plots = []
-            l = 4
-            w = 4
-            grid = (l, w)
-            for i in range(l):
-                for j in range(w):
-                    sub_plot = plt.subplot2grid(grid, (i, j), rowspan=1, colspan=1)
-                    sub_plots.append(sub_plot)
-         
-            i = 1
-            for sub_plot in sub_plots:
-                pix = pixs[i]
-                y = zip(*pix)[1]
-                sub_plot.pcolor(np.array([y]), cmap=cmaps.Reds)
-                sub_plot.set_xlabel('Time')
-                sub_plot.set_ylabel('Temperature (C)')
-                sub_plot.set_title(self._sensor_name + ": " + self._context[i])
-                i+=1
-            plt.subplots_adjust(wspace=0.2, hspace=0.2)
-            
-            return sub_plots
-        else:
-            pixs = self._data
-            i = 0
-            for pix in pixs[0:]:
-                sub_plot = subplots[i]
-                y = zip(*pix)[1]
-                sub_plot.pcolor(np.array([y]), cmap=cmaps.Reds)
-                sub_plot.set_xlabel('Time')
-                sub_plot.set_ylabel('Temperature (C)')
-                sub_plot.set_title(self._sensor_name + ": " + self._context[i])
-                i+=1
-            plt.subplots_adjust(wspace=0.2, hspace=0.2)
     
     def plot_timeseries(self, subplot=None):
         """Create a timeseries plot from the data in the Sensor.
