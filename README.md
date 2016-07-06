@@ -51,8 +51,8 @@ FUNCTIONALITY
 		object to the AoT object.
 		
 USE
-	The previously mentioned files are not sommand line executable, and are 
-	meant to be used within other programs. As such, to use the sensor, node, and
-	aot classes they must first be imported into the program.
+	The previously mentioned files are not command line executable (with the exception 
+    of AoT_Demo.py), and are meant to be used within other programs. As such, to use 
+    the sensor, node, and aot classes they must first be imported into the program.
 	Generally, one would start by instantiating a Node object so that the user has 
-	data to work with.
+	data to work with (See AoT_Demo.py for example).
